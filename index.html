@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faizan Game Store</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Poppins font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Tailwind Configuration & Global Styles */
+        :root {
+            --color-primary: #3b82f6; /* Blue accent */
+            --color-secondary: #121212; /* Dark background */
+            --color-text-light: #1f2937;
+            --color-card-light: #ffffff;
+            --color-shadow-light: rgba(0, 0, 0, 0.1);
+            --color-text-dark: #ccfbf1; /* Neon Green accent */
+            --color-card-dark: #1e1e1e;
+            --color-shadow-dark: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Default Light Mode */
+        .light {
+            background-color: white;
+            color: var(--color-text-light);
+            transition: all 0.3s ease;
+        }
+
+        /* Dark Mode Overrides */
+        .dark {
+            background-color: var(--color-secondary);
+            color: var(--color-text-dark);
+            transition: all 0.3s ease;
+        }
+
+        .dark .card-bg {
+            background-color: var(--color-card-dark);
+            box-shadow: 0 10px 15px -3px var(--color-shadow-dark), 0 4px 6px -2px var(--color-shadow-dark);
+            border: 1px solid #2e2e2e;
+        }
+
+        .light .card-bg {
+            background-color: var(--color-card-light);
+            box-shadow: 0 10px 15px -3px var(--color-shadow-light), 0 4px 6px -2px var(--color-shadow-light);
+        }
+
+        .dark .accent-text {
+            color: #4ade80; /* Neon Green */
+        }
+
+        .light .accent-text {
+            color: var(--color-primary); /* Blue */
+        }
+        
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            /* Default background image setting (will be overwritten by JS if user sets one) */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(66, 255, 140, 0.7); }
+            50% { box-shadow: 0 0 10px 5px rgba(66, 255, 140, 0); }
+        }
+        
+        /* Header specific animation */
+        .header-loaded {
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .game-card {
+            animation: slideUp 0.5s ease-out backwards;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: scale(1.03);
+        }
+
+        .dark .hover-pulse:hover {
+            animation: pulseGlow 1s infinite;
+        }
+
+        /* Fallback for icon */
+        .no-icon {
+            background-color: #9ca3af; /* Gray placeholder */
+        }
+
+        /* Loading Screen Style */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--color-secondary);
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--color-text-dark);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar for modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        .dark::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+    </style>
+</head>
+
+<body class="light">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="flex flex-col items-center">
+            <div class="spinner"></div>
+            <p class="text-white mt-4 text-xl tracking-wider">Loading Store...</p>
+        </div>
+    </div>
+
+    <div id="app-content" class="min-h-screen pt-4 pb-20 opacity-0 transition-opacity duration-500">
+        <!-- HEADER -->
+        <header id="main-header" class="relative w-full h-40 bg-gray-700 header-loaded flex items-center justify-center p-4 rounded-b-xl shadow-lg mb-8">
+            <h1 class="text-4xl font-bold text-white tracking-widest text-shadow-lg">Faizan Store</h1>
+            <div id="header-image-fallback" class="absolute inset-0 bg-black bg-opacity-40"></div>
+        </header>
+        
+        <main class="container mx-auto px-4">
+            
+            <!-- CONTROLS: SEARCH & TOGGLES -->
+            <section class="mb-8 p-4 card-bg rounded-xl sticky top-0 z-10 backdrop-blur-sm bg-opacity-90">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <!-- Search Bar -->
+                    <div class="relative flex-grow w-full md:w-auto">
+                        <input type="text" id="search-input" placeholder="Search by name, package, or keyword..." class="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:ring-2 focus:ring-accent-text dark:bg-gray-700 dark:border-gray-600 dark:text-white transition" oninput="filterGames()">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"></i>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="p-3 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white hover:ring-2 ring-accent-text transition-all hover-pulse" onclick="toggleTheme()">
+                        <i id="theme-icon" data-lucide="moon" class="h-6 w-6"></i>
+                    </button>
+
+                    <!-- Fullscreen Toggle -->
+                    <button id="fullscreen-toggle" class="p-3 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white hover:ring-2 ring-accent-text transition-all hover-pulse" onclick="toggleFullscreen()">
+                        <i data-lucide="maximize" class="h-6 w-6"></i>
+                    </button>
+
+                    <!-- Background Customizer -->
+                    <button id="bg-customizer-btn" class="p-3 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white hover:ring-2 ring-accent-text transition-all hover-pulse" onclick="showBackgroundCustomizer()">
+                        <i data-lucide="image" class="h-6 w-6"></i>
+                    </button>
+                    
+                </div>
+                
+                <!-- Background Customizer Modal (Simple In-Page Overlay) -->
+                <div id="bg-customizer-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md">
+                        <h3 class="text-xl font-semibold mb-4 dark:text-white accent-text">Customize Background</h3>
+                        <input type="url" id="bg-url-input" placeholder="Enter image URL" class="w-full p-3 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white mb-4">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="hideBackgroundCustomizer()" class="px-4 py-2 bg-gray-300 rounded-lg dark:bg-gray-600 dark:text-white">Cancel</button>
+                            <button onclick="setBackgroundImage()" class="px-4 py-2 bg-accent-text text-white font-semibold rounded-lg transition hover:opacity-90">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- GAME GRID -->
+            <section id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Game cards will be injected here -->
+            </section>
+
+            <!-- EMPTY/ERROR MESSAGES -->
+            <div id="empty-message" class="hidden text-center p-12 card-bg rounded-xl mt-8">
+                <i data-lucide="frown" class="w-12 h-12 mx-auto mb-4 accent-text"></i>
+                <h3 class="text-2xl font-semibold accent-text">No Games Uploaded Yet!</h3>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Please check the `game.txt` file or network connectivity.</p>
+            </div>
+            
+            <div id="no-search-results" class="hidden text-center p-12 card-bg rounded-xl mt-8">
+                <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-4 accent-text"></i>
+                <h3 class="text-2xl font-semibold accent-text">No Game Found!</h3>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Try a different search term or check your filters.</p>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="fixed bottom-0 left-0 w-full p-3 text-center bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-20">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+            <span onclick="showCopyright()" class="cursor-pointer hover:underline text-accent-text">(c) Saad</span>
+            |
+            <button onclick="openHelpMail()" class="text-accent-text hover:underline focus:outline-none">Help</button>
+            |
+            <button onclick="history.back()" class="text-accent-text hover:underline focus:outline-none">Back</button>
+        </p>
+    </footer>
+
+
+    <script>
+        // --- CONSTANTS ---
+        const REPO_OWNER = '9090muhammadsaad-rgb';
+        const REPO_NAME = 'faizangamestore';
+        const BRANCH = 'main'; // Assumed default branch
+        const BASE_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/`;
+        
+        // Game data store
+        let allGamesData = [];
+        const infoFiles = ['app_name.txt', 'pkg.txt', 'date.txt', 'size.txt', 'description.txt', 'work.txt', 'description.txt']; // Note: second description.txt is the main download link file
+        const infoKeys = ['name', 'package', 'date', 'size', 'description', 'compatibility', 'download_link'];
+        
+        // --- UTILITY FUNCTIONS ---
+
+        /** Fetches file content from GitHub Raw and handles errors/fallbacks. */
+        async function fetchFile(filePath, fallback = 'N/A') {
+            const fullPath = BASE_URL + filePath;
+            try {
+                const response = await fetch(fullPath);
+                if (!response.ok) {
+                    // Check for 404/400 errors explicitly
+                    return fallback;
+                }
+                const text = await response.text();
+                // If text is too short or looks like a GitHub error page, treat it as missing.
+                if (text.length < 50 && text.toLowerCase().includes('404')) {
+                    return fallback;
+                }
+                return text.trim();
+            } catch (error) {
+                console.error(`Error fetching ${filePath}:`, error);
+                return fallback;
+            }
+        }
+
+        /** Checks if a file exists (used for icon/header fallbacks) */
+        async function checkFileExists(filePath) {
+            const fullPath = BASE_URL + filePath;
+            try {
+                const response = await fetch(fullPath, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        /** Adds a placeholder image URL for missing icons */
+        function getIconFallbackUrl(gameName) {
+            // Using a dynamic placeholder image
+            return `https://placehold.co/128x128/9ca3af/ffffff?text=${encodeURIComponent(gameName.split(' ').map(n=>n[0]).join('') || 'NO')}`;
+        }
+        
+        // --- CORE APPLICATION LOGIC ---
+
+        /** 1. Loads the Header Image/Text */
+        async function loadHeader() {
+            const header = document.getElementById('main-header');
+            const headerText = header.querySelector('h1');
+            const headerBgFallback = document.getElementById('header-image-fallback');
+
+            header.style.backgroundImage = 'none'; // Reset background
+
+            const headerJpgExists = await checkFileExists('header.jpg');
+            if (headerJpgExists) {
+                header.style.backgroundImage = `url(${BASE_URL}header.jpg)`;
+            } else {
+                const headerPngExists = await checkFileExists('header.png');
+                if (headerPngExists) {
+                    header.style.backgroundImage = `url(${BASE_URL}header.png)`;
+                }
+            }
+
+            // Apply styling if image was loaded
+            if (header.style.backgroundImage !== 'none') {
+                header.classList.remove('bg-gray-700');
+                header.classList.add('bg-cover', 'bg-center');
+                headerText.classList.add('relative', 'z-10');
+            } else {
+                // Show plain text header with default styling
+                header.classList.add('bg-gray-800');
+                headerBgFallback.classList.add('hidden');
+            }
+        }
+
+        /** 2. Loads details for a single game folder */
+        async function loadGameDetails(gameFolder) {
+            const gameData = { folder: gameFolder };
+            let hasError = false;
+
+            // Load Icon (Icon loading does not use fetchFile utility, it uses checkFileExists for URL)
+            const iconJpgPath = `${gameFolder}/icon.jpg`;
+            const iconPngPath = `${gameFolder}/icon.png`;
+            
+            if (await checkFileExists(iconJpgPath)) {
+                gameData.icon = BASE_URL + iconJpgPath;
+            } else if (await checkFileExists(iconPngPath)) {
+                gameData.icon = BASE_URL + iconPngPath;
+            } else {
+                gameData.icon = getIconFallbackUrl(gameFolder);
+                gameData.iconFallback = true;
+            }
+
+            // Load Info Files
+            for (let i = 0; i < infoFiles.length; i++) {
+                let path = `${gameFolder}/app_info/${infoFiles[i]}`;
+                // Special handling for main description/download link file
+                if (infoFiles[i] === 'description.txt' && i === infoFiles.length - 1) {
+                    path = `${gameFolder}/description.txt`;
+                }
+
+                const content = await fetchFile(path, 'N/A');
+                gameData[infoKeys[i]] = content;
+                if (content === 'N/A') hasError = true;
+            }
+
+            // Load Assets List
+            const assetsTxt = await fetchFile(`${gameFolder}/assets/assets.txt`, null);
+            gameData.assets = [];
+            if (assetsTxt && assetsTxt !== 'N/A') {
+                const assetNames = assetsTxt.split('\n').map(a => a.trim()).filter(a => a);
+                gameData.assets = assetNames.map(name => ({
+                    url: BASE_URL + gameFolder + '/assets/' + name,
+                    type: name.endsWith('.mp4') ? 'video' : 'image'
+                }));
+            }
+
+            gameData.keywords = (gameData.description.match(/#\w+/g) || []).map(k => k.substring(1).toLowerCase());
+            gameData.hasError = hasError;
+            return gameData;
+        }
+
+        /** 3. Main Loader: Fetches the list of games and then loads details for each */
+        async function loadGames() {
+            const gameListText = await fetchFile('game.txt', null);
+            const emptyMessage = document.getElementById('empty-message');
+            
+            if (!gameListText || gameListText === 'N/A') {
+                // No game.txt found or network error
+                emptyMessage.classList.remove('hidden');
+                document.getElementById('no-search-results').classList.add('hidden');
+                hideLoadingScreen();
+                return;
+            }
+            
+            const gameFolders = gameListText.split('\n').map(g => g.trim()).filter(g => g && g.endsWith('__(game)'));
+
+            if (gameFolders.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                hideLoadingScreen();
+                return;
+            }
+
+            // Use Promise.all to fetch details concurrently
+            const gamePromises = gameFolders.map(loadGameDetails);
+            allGamesData = await Promise.all(gamePromises);
+            
+            renderGames(allGamesData);
+            hideLoadingScreen();
+        }
+        
+        /** 4. Renders the Game Cards to the UI */
+        function renderGames(gamesToRender) {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+            
+            if (gamesToRender.length === 0) {
+                document.getElementById('no-search-results').classList.remove('hidden');
+                document.getElementById('empty-message').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('no-search-results').classList.add('hidden');
+            document.getElementById('empty-message').classList.add('hidden');
+            
+            gamesToRender.forEach((game, index) => {
+                const cardHtml = createGameCard(game, index);
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+                
+                // Add slideUp delay for sequential animation
+                const cardElement = grid.lastElementChild;
+                cardElement.style.animationDelay = `${index * 0.05}s`;
+            });
+            
+            // Re-render Lucide icons after content injection
+            lucide.createIcons();
+        }
+
+        /** Creates the HTML string for a single game card */
+        function createGameCard(game, index) {
+            // Lazy load for icon
+            const iconHtml = game.iconFallback 
+                ? `<div class="w-16 h-16 rounded-xl no-icon flex items-center justify-center text-white text-xl font-bold">${game.name.substring(0,2) || 'N/A'}</div>`
+                : `<img loading="lazy" src="${game.icon}" alt="${game.name} Icon" class="w-16 h-16 rounded-xl object-cover shadow-lg">`;
+            
+            // Limit description to 100 characters for card
+            const shortDescription = game.description.length > 100 
+                ? game.description.substring(0, 97) + '...' 
+                : game.description;
+            
+            // Determine card title/name, prioritizing fetched name over folder name
+            const displayGameName = game.name !== 'N/A' ? game.name : game.folder.replace('__(game)', '');
+
+            const isDownloadAvailable = game.download_link && game.download_link.startsWith('http');
+            const downloadLink = isDownloadAvailable ? game.download_link : '#';
+
+            return `
+                <div class="game-card card-bg rounded-2xl p-4 flex flex-col transition duration-300 ease-in-out shadow-lg hover:shadow-xl" data-index="${index}">
+                    <!-- Card Header -->
+                    <div class="flex items-center space-x-4 mb-4">
+                        ${iconHtml}
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-xl font-semibold truncate accent-text">${displayGameName}</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 truncate">${game.package !== 'N/A' ? game.package : 'Package N/A'}</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button onclick="openModal(${index})" class="p-1 rounded-full text-gray-400 hover:text-accent-text transition">
+                                <i data-lucide="info" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Meta Info -->
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-3 border-t pt-2 border-gray-200 dark:border-gray-700">
+                        <p>Size: <span class="font-medium">${game.size}</span></p>
+                        <p>Date: <span class="font-medium">${game.date}</span></p>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="text-sm flex-grow mb-4 text-gray-700 dark:text-gray-300">${shortDescription}</p>
+
+                    <!-- Buttons -->
+                    <div class="mt-auto flex gap-2">
+                        <a href="${downloadLink}" target="_blank" 
+                           class="w-full px-4 py-2 text-center text-white font-bold rounded-lg transition-all duration-300 hover-pulse
+                           ${isDownloadAvailable ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}"
+                           onclick="${isDownloadAvailable ? `handleDownloadClick(event, '${downloadLink}', ${index})` : 'return false;'}"
+                           data-download-status="ready"
+                           id="download-btn-${index}">
+                            <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>
+                            ${isDownloadAvailable ? 'Download' : 'No Link'}
+                        </a>
+                    </div>
+                    ${game.hasError ? '<p class="text-xs text-red-500 mt-2 text-center">Missing critical info files!</p>' : ''}
+                </div>
+            `;
+        }
+        
+        // --- DOWNLOAD/RETRY LOGIC ---
+        function handleDownloadClick(event, url, index) {
+            // Simple logic: if download fails (not possible to detect automatically client-side), 
+            // the user will click the retry button later.
+            const btn = document.getElementById(`download-btn-${index}`);
+            if (btn) {
+                btn.textContent = 'Downloading...';
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-blue-500');
+
+                // Simulate a slight delay before opening the link
+                setTimeout(() => {
+                    // This is the simplest way to open the link and reset the button
+                    window.open(url, '_blank');
+                    
+                    // Change to Retry state after a few seconds (simulated network error/failure)
+                    setTimeout(() => {
+                        btn.textContent = 'Retry Download';
+                        btn.classList.remove('bg-blue-500');
+                        btn.classList.add('bg-red-500', 'hover:bg-red-600');
+                        btn.onclick = () => handleDownloadClick(event, url, index); // Re-set the click handler
+                    }, 3000); // 3 seconds to switch to Retry state
+                }, 500);
+            }
+            event.preventDefault(); // Prevent immediate default link behavior
+        }
+        
+        // --- SEARCH & FILTER LOGIC ---
+        function filterGames() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            if (query === '') {
+                renderGames(allGamesData);
+                return;
+            }
+
+            const filtered = allGamesData.filter(game => {
+                const searchString = [
+                    game.name,
+                    game.package,
+                    game.compatibility,
+                    ...game.keywords
+                ].join(' ').toLowerCase();
+
+                return searchString.includes(query);
+            });
+
+            renderGames(filtered);
+        }
+
+        // --- MODAL (Game Details) ---
+        function openModal(index) {
+            const game = allGamesData[index];
+            if (!game) return;
+
+            // Create Modal HTML (Re-use Tailwind utility classes)
+            const modal = document.createElement('div');
+            modal.id = 'game-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 backdrop-blur-sm';
+            
+            const assetHtml = game.assets.length > 0 ? game.assets.map(asset => {
+                if (asset.type === 'video') {
+                    return `<video controls class="w-full h-auto rounded-lg mb-2 shadow-md" src="${asset.url}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/300x200/ff0000/ffffff?text=Video+Not+Found'"></video>`;
+                } else {
+                    return `<img loading="lazy" class="w-full h-auto rounded-lg mb-2 shadow-md" src="${asset.url}" alt="Screenshot" onerror="this.onerror=null;this.src='https://placehold.co/300x200/9ca3af/ffffff?text=Image+Not+Found'">`;
+                }
+            }).join('') : '<p class="text-gray-500 dark:text-gray-400">No screenshots or gameplay videos found.</p>';
+
+            const iconHtml = game.iconFallback 
+                ? `<div class="w-20 h-20 rounded-xl no-icon flex items-center justify-center text-white text-3xl font-bold mr-4">${game.name.substring(0,2) || 'N/A'}</div>`
+                : `<img src="${game.icon}" alt="${game.name} Icon" class="w-20 h-20 rounded-xl object-cover shadow-lg mr-4">`;
+
+            modal.innerHTML = `
+                <div class="card-bg rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform scale-95 transition-all duration-300">
+                    <div class="p-6">
+                        <!-- Modal Header -->
+                        <div class="flex items-start justify-between border-b pb-4 mb-4 border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center">
+                                ${iconHtml}
+                                <div>
+                                    <h3 class="text-2xl font-bold accent-text">${game.name}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">${game.package}</p>
+                                </div>
+                            </div>
+                            <button onclick="closeModal()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                <i data-lucide="x" class="w-6 h-6 text-gray-600 dark:text-gray-300"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Modal Body -->
+                        <div class="space-y-4">
+                            <!-- Download Button (Top) -->
+                            <a href="${game.download_link}" target="_blank" 
+                                class="block w-full text-center px-4 py-3 text-white font-bold rounded-lg transition-all duration-300 bg-green-600 hover:bg-green-700"
+                                onclick="closeModal()">
+                                <i data-lucide="download" class="w-5 h-5 inline mr-2"></i>
+                                Download Now (${game.size})
+                            </a>
+
+                            <!-- Description -->
+                            <div>
+                                <h4 class="text-lg font-semibold border-b border-accent-text mb-2">Description</h4>
+                                <p class="whitespace-pre-wrap text-gray-700 dark:text-gray-300">${game.description}</p>
+                            </div>
+                            
+                            <!-- Compatibility -->
+                            <div>
+                                <h4 class="text-lg font-semibold border-b border-accent-text mb-2">Compatibility</h4>
+                                <p class="text-gray-700 dark:text-gray-300">${game.compatibility}</p>
+                            </div>
+
+                            <!-- Screenshots/Videos -->
+                            <div>
+                                <h4 class="text-lg font-semibold border-b border-accent-text mb-2">Screenshots & Gameplay</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    ${assetHtml}
+                                </div>
+                            </div>
+
+                            <!-- Additional Info -->
+                            <div class="text-sm pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <p>Release Date: <span class="font-medium">${game.date}</span></p>
+                                <p>Package ID: <span class="font-medium">${game.package}</span></p>
+                                <p>Source Folder: <span class="font-mono text-xs text-gray-500">${game.folder}</span></p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.querySelector('div').classList.add('scale-100'); // Animate in
+            lucide.createIcons(); // Initialize icons inside the modal
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('game-modal');
+            if (modal) {
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => modal.remove(), 300); // Wait for transition
+            }
+        }
+        
+        // --- EXTRA FUNCTIONAL FEATURES ---
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            if (isDark) {
+                document.body.classList.remove('light');
+                document.getElementById('theme-icon').innerHTML = lucide.createIcons()['sun'].toMarkup();
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('loading-screen').style.backgroundColor = 'var(--color-secondary)';
+            } else {
+                document.body.classList.add('light');
+                document.getElementById('theme-icon').innerHTML = lucide.createIcons()['moon'].toMarkup();
+                localStorage.setItem('theme', 'light');
+                document.getElementById('loading-screen').style.backgroundColor = 'white';
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert("Error attempting to enable full-screen mode: " + err.message);
+                });
+                document.getElementById('fullscreen-toggle').querySelector('svg').outerHTML = lucide.createIcons()['minimize'].toMarkup();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                document.getElementById('fullscreen-toggle').querySelector('svg').outerHTML = lucide.createIcons()['maximize'].toMarkup();
+            }
+        }
+        
+        function showBackgroundCustomizer() {
+            document.getElementById('bg-customizer-modal').classList.remove('hidden');
+        }
+
+        function hideBackgroundCustomizer() {
+            document.getElementById('bg-customizer-modal').classList.add('hidden');
+        }
+
+        function setBackgroundImage() {
+            const url = document.getElementById('bg-url-input').value.trim();
+            if (url) {
+                document.body.style.backgroundImage = `url(${url})`;
+                localStorage.setItem('backgroundUrl', url);
+            } else {
+                document.body.style.backgroundImage = 'none';
+                localStorage.removeItem('backgroundUrl');
+            }
+            hideBackgroundCustomizer();
+        }
+
+        function showCopyright() {
+            const message = "© Saad. This is a static GitHub Pages project demonstrating dynamic content loading without a dedicated backend.";
+            
+            // Custom Alert Box (replacing alert())
+            const alertBox = document.createElement('div');
+            alertBox.className = 'fixed top-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-2xl bg-gray-900 text-white z-[9999] transition-opacity duration-300';
+            alertBox.textContent = message;
+            document.body.appendChild(alertBox);
+            
+            setTimeout(() => {
+                alertBox.style.opacity = '0';
+                setTimeout(() => alertBox.remove(), 300);
+            }, 3000);
+        }
+
+        function openHelpMail() {
+            window.location.href = 'mailto:muhmmadsaad226@gmail.com?subject=Faizan%20Game%20Store%20Help%20Request&body=Please%20describe%20your%20issue%20here...';
+        }
+        
+        function hideLoadingScreen() {
+             const loadingScreen = document.getElementById('loading-screen');
+             const content = document.getElementById('app-content');
+             
+             // Fade out loading screen
+             loadingScreen.style.opacity = '0';
+             
+             // Fade in content
+             content.style.opacity = '1';
+             
+             setTimeout(() => {
+                 loadingScreen.classList.add('hidden');
+             }, 500);
+        }
+
+
+        // --- INITIALIZATION ---
+        
+        function initializeApp() {
+            // 1. Apply Theme from LocalStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                document.body.classList.remove('light');
+                document.getElementById('theme-icon').innerHTML = lucide.createIcons()['sun'].toMarkup();
+            } else {
+                document.body.classList.remove('dark');
+                document.body.classList.add('light');
+            }
+            
+            // 2. Apply Background from LocalStorage
+            const savedBgUrl = localStorage.getItem('backgroundUrl');
+            if (savedBgUrl) {
+                 document.body.style.backgroundImage = `url(${savedBgUrl})`;
+                 document.getElementById('bg-url-input').value = savedBgUrl;
+            }
+
+            // 3. Load Header & Games
+            loadHeader();
+            loadGames(); // This hides the loading screen upon completion
+            
+            // 4. Initialize Icons for static content
+            lucide.createIcons();
+        }
+
+        // Wait for all static DOM elements to be ready
+        window.onload = initializeApp;
+
+    </script>
+</body>
+</html>
+
